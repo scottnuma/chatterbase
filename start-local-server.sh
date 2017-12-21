@@ -1,1 +1,1 @@
-lt --subdomain newmascot --porot 8081
+lt --subdomain newmascot --port 8081
