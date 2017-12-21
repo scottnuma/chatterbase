@@ -1,0 +1,28 @@
+{
+  "name": "slack-slash-commander",
+  "version": "1.0.0",
+  "description": "A way to process slash commands in Slack",
+  "main": "index.js",
+  "dependencies": {
+    "morgan": "^1.9.0",
+    "restify": "^6.3.4"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/scottnuma/slack-n-slash.git"
+  },
+  "keywords": [
+    "Slack",
+    "slash"
+  ],
+  "author": "Scott Numamoto",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/scottnuma/slack-n-slash/issues"
+  },
+  "homepage": "https://github.com/scottnuma/slack-n-slash#readme"
+}
