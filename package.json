@@ -5,7 +5,8 @@
   "main": "index.js",
   "dependencies": {
     "morgan": "^1.9.0",
-    "restify": "^6.3.4"
+    "restify": "^6.3.4",
+    "sqlite": "^2.9.0"
   },
   "devDependencies": {},
   "scripts": {
