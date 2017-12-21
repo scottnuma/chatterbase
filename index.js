@@ -10,8 +10,9 @@ var PORT = process.env.PORT || 8081
 var server = restify.createServer()
 server.use(logger('tiny'))
 
-// Add a `/beepboop` route handler for `/beepboop` slash command
-server.post('/beepboop', restify.plugins.bodyParser({mapParams: true}), function (req, res) {
+// Slack will send a POST request to the URL specified in the 
+// Request URL. We choose how to handle it here
+server.post('/', restify.plugins.bodyParser({mapParams: true}), function (req, res) {
 	/*
 	 * A slash command for '/weather' will return something similar to
 	 * the following for the req.params
@@ -50,6 +51,7 @@ server.post('/beepboop', restify.plugins.bodyParser({mapParams: true}), function
 		//res.send(200, 'OK');
 	//}
 
+	// Formulate the message
   var message = 'Message Received Succ';
 
   // Handle any help requests
