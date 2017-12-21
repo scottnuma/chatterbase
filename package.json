@@ -6,7 +6,7 @@
   "dependencies": {
     "morgan": "^1.9.0",
     "restify": "^6.3.4",
-    "sqlite": "^2.9.0"
+    "sqlite3": "^3.1.13"
   },
   "devDependencies": {},
   "scripts": {
