@@ -3,7 +3,7 @@ var logger = require('morgan');
 var sqlite3 = require('sqlite3').verbose();
 var request = require('request');
 
-var VERIFY_TOKEN = process.env.VERIFICATION_TOKEN || 'stuff';
+var VERIFY_TOKEN = process.env.VERIFICATION_TOKEN || 'missing token';
 
 // The open port is linked to the port opened
 var PORT = process.env.PORT || 8081
@@ -22,14 +22,12 @@ function query_db(query, callback) {
 		if (err) {
 			console.error(err.message);
 		}
-		console.log('Connected to database');
 	});
 
 	db.all(query, [], callback);
 
 	db.close((err) => {
 		if (err) { console.error(err.message); }
-		console.log('Closed database');
 	});
 }
 
@@ -73,14 +71,8 @@ server.post('/', restify.plugins.bodyParser({mapParams: true}), function (req, r
 	// Upon receiving a request, we should verify it's coming from Slack
   if (req.params.token !== VERIFY_TOKEN) {
 		console.log("verification failed");
-		console.log(req.params);
-		
-		// We can choose to disable verification until we get env variables figured 
-		// out return res.send(401, 'Unauthorized')
-  } else {
-		console.log("verification succ");
-		console.log(req.params);
-	}
+		return res.send(401, 'Unauthorized');
+  }
 
   // Handle any help requests
   if (!req.params.text || req.params.text === 'help') {
