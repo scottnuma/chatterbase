@@ -23,8 +23,7 @@ function query_db(query, callback) {
 		console.log('Connected to database');
 	});
 
-	let sql = 'select * from checkins LIMIT 1';
-	db.all(sql, [], (err, rows) => {
+	db.all(query, [], (err, rows) => {
 		if (err) {
 			throw err;
 		}
@@ -38,6 +37,17 @@ function query_db(query, callback) {
 			console.error(err.message);
 		}
 		console.log('Closed database');
+	});
+}
+
+// Send a POST HTTP request to respond to slash command
+function sendDelayedResponse(url, message) {
+	slack_data = {'text': message}
+	response = request.post({
+		uri: url,
+		headers: {'Content-Type': 'application/json'},
+		body: slack_data,
+		json: true,
 	});
 }
 
@@ -76,18 +86,17 @@ server.post('/', restify.plugins.bodyParser({mapParams: true}), function (req, r
 		console.log(req.params);
 	}
 
-	//if (req.params.ssl_check == '1') {
-		//console.log('Got an SSL check');
-		//res.send(200, 'OK');
-	//}
-
-	// Formulate the message
-  var message = 'Message Received Succ';
-
   // Handle any help requests
-  if (req.params.text === 'help') {
-    message = "Sorry, I can't offer much help, just here to beep and boop"
+  if (!req.params.text || req.params.text === 'help') {
+    message = "Enter a sql statement to query the staff checkin database";
+		res.send({
+			response_type: 'in_channel',
+			text: message
+		});
+		return;
   }
+
+	query = req.params.text;
 
 	// Immediately respond
 	res.send({
@@ -95,23 +104,8 @@ server.post('/', restify.plugins.bodyParser({mapParams: true}), function (req, r
 		text: "Hmm, I'm thinking." 
 	});
 
-	console.log(req.params.response_url);
-	query_db("random query", function(rows) {
-		console.log('req started');
-
-		slack_data = {'text': 'Hello!'}
-		response = request.post({
-			uri: req.params.response_url,
-			headers: {'Content-Type': 'application/json'},
-			body: slack_data,
-			json: true,
-		});
-		console.log(response);
-		console.log('req finished');
-		//res.send({
-			//response_type: 'in_channel',
-			//text: "stuff" 
-		//});
+	query_db(query, function(rows) {
+		sendDelayedResponse(req.params.response_url, JSON.stringify(rows));
 	});
 })
 // Add a GET handler for `/beepboop` route that Slack expects to be present
