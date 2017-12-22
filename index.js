@@ -15,6 +15,8 @@ const databaseFile = './attendance_log.db';
 // Log via terminal the requests the server receives
 server.use(logger('tiny'))
 
+// Search the database with an sql QUERY
+// Execute the callback upon completion of the query
 function query_db(query, callback) {
 	let db = new sqlite3.Database(databaseFile, sqlite3.OPEN_READONLY, (err) => {
 		if (err) {
@@ -24,18 +26,12 @@ function query_db(query, callback) {
 	});
 
 	db.all(query, [], (err, rows) => {
-		if (err) {
-			throw err;
-		}
-		// The rows / results of the query are essentially returned or at
-		// least handed over here. 
+		if (err) { throw err; }
 		callback(rows);
 	});
 
 	db.close((err) => {
-		if (err) {
-			console.error(err.message);
-		}
+		if (err) { console.error(err.message); }
 		console.log('Closed database');
 	});
 }
@@ -51,28 +47,8 @@ function sendDelayedResponse(url, message) {
 	});
 }
 
-// Request URL. We choose how to handle it here
+// Respond to HTTP requests triggered by slash commands
 server.post('/', restify.plugins.bodyParser({mapParams: true}), function (req, res) {
-	/*
-	 * A slash command for '/weather' will return something similar to
-	 * the following for the req.params
-	 *
-	 * token=gIkuvaNzQIHg97ATvDxqgjtO
-	 * team_id=T0001
-	 * team_domain=example
-	 * enterprise_id=E0001
-	 * enterprise_name=Globular%20Construct%20Inc
-	 * channel_id=C2147483705
-	 * channel_name=test
-	 * user_id=U2147483697
-	 * user_name=Steve
-	 * command=/weather
-	 * text=94070
-	 * response_url=https://hooks.slack.com/commands/1234/5678
-	 * trigger_id=13345224609.738474920.8088930838d88f008e0
-	 *
-	 * Note that user_name is being phase out
-	 */
 
 	// Upon receiving a request, we should verify it's coming from Slack
   if (req.params.token !== VERIFY_TOKEN) {
@@ -98,7 +74,7 @@ server.post('/', restify.plugins.bodyParser({mapParams: true}), function (req, r
 
 	query = req.params.text;
 
-	// Immediately respond
+	// Give feedback to the user that we've received the command
 	res.send({
 		response_type: 'in_channel',
 		text: "Hmm, I'm thinking." 
@@ -108,17 +84,13 @@ server.post('/', restify.plugins.bodyParser({mapParams: true}), function (req, r
 		sendDelayedResponse(req.params.response_url, JSON.stringify(rows));
 	});
 })
-// Add a GET handler for `/beepboop` route that Slack expects to be present
-server.get('/beepboop', function (req, res) {
-  res.send(200, 'Ok')
-})
 
 // Add a GET handler for the default landing route 
 server.get('/', function(req, res) {
 	res.send(200, 'Server is online');
 })
 
-// 🔥 it up
+// Fire up the server
 server.listen(PORT, function (err) {
   if (err) {
     return console.error('Error starting server: ', err)
