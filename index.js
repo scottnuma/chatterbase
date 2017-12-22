@@ -25,10 +25,7 @@ function query_db(query, callback) {
 		console.log('Connected to database');
 	});
 
-	db.all(query, [], (err, rows) => {
-		if (err) { throw err; }
-		callback(rows);
-	});
+	db.all(query, [], callback);
 
 	db.close((err) => {
 		if (err) { console.error(err.message); }
@@ -37,14 +34,37 @@ function query_db(query, callback) {
 }
 
 // Send a POST HTTP request to respond to slash command
-function sendDelayedResponse(url, message) {
-	slack_data = {'text': message}
+function sendDelayedResponse(req, message) {
+	url = req.params.response_url;
+	query = " > " + req.params.text + "\n";
+	slack_data = {
+		'text': query + message,
+		'response_type': 'in_channel',
+	}
 	response = request.post({
 		uri: url,
 		headers: {'Content-Type': 'application/json'},
 		body: slack_data,
 		json: true,
 	});
+}
+
+// Parse database rows into a readable string
+function stringify_rows(rows) {
+	result = ""
+
+	// List out the column names
+	if (rows && rows.length > 0) {
+		result = Object.keys(rows[0]).join("\t") + "\n";
+	}
+
+	rows.forEach(row => {
+		for (var key in row) {
+			result += row[key] + "\t";
+		}
+		result += "\n";
+	});
+	return result;
 }
 
 // Respond to HTTP requests triggered by slash commands
@@ -66,7 +86,7 @@ server.post('/', restify.plugins.bodyParser({mapParams: true}), function (req, r
   if (!req.params.text || req.params.text === 'help') {
     message = "Enter a sql statement to query the staff checkin database";
 		res.send({
-			response_type: 'in_channel',
+			response_type: 'ephemeral',
 			text: message
 		});
 		return;
@@ -76,12 +96,17 @@ server.post('/', restify.plugins.bodyParser({mapParams: true}), function (req, r
 
 	// Give feedback to the user that we've received the command
 	res.send({
-		response_type: 'in_channel',
+		response_type: 'ephemeral',
 		text: "Hmm, I'm thinking." 
 	});
 
-	query_db(query, function(rows) {
-		sendDelayedResponse(req.params.response_url, JSON.stringify(rows));
+	query_db(query, function(err, rows) {
+		if (err) {
+			sendDelayedResponse(req, err.code);
+		} else {
+			console.log('Obtained rows');
+			sendDelayedResponse(req, stringify_rows(rows));
+		}
 	});
 })
 
