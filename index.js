@@ -1,16 +1,46 @@
-var restify = require('restify')
-var logger = require('morgan')
+var restify = require('restify');
+var logger = require('morgan');
+var sqlite3 = require('sqlite3').verbose();
+var request = require('request');
 
 var VERIFY_TOKEN = process.env.VERIFICATION_TOKEN || 'stuff';
 
-// Use Beep Boop provided PORT - default to 8080 for dev
 // The open port is linked to the port opened
 var PORT = process.env.PORT || 8081
 
 var server = restify.createServer()
+
+const databaseFile = './attendance_log.db';
+
+// Log via terminal the requests the server receives
 server.use(logger('tiny'))
 
-// Slack will send a POST request to the URL specified in the 
+function query_db(query, callback) {
+	let db = new sqlite3.Database(databaseFile, sqlite3.OPEN_READONLY, (err) => {
+		if (err) {
+			console.error(err.message);
+		}
+		console.log('Connected to database');
+	});
+
+	let sql = 'select * from checkins LIMIT 1';
+	db.all(sql, [], (err, rows) => {
+		if (err) {
+			throw err;
+		}
+		// The rows / results of the query are essentially returned or at
+		// least handed over here. 
+		callback(rows);
+	});
+
+	db.close((err) => {
+		if (err) {
+			console.error(err.message);
+		}
+		console.log('Closed database');
+	});
+}
+
 // Request URL. We choose how to handle it here
 server.post('/', restify.plugins.bodyParser({mapParams: true}), function (req, res) {
 	/*
@@ -39,8 +69,8 @@ server.post('/', restify.plugins.bodyParser({mapParams: true}), function (req, r
 		console.log("verification failed");
 		console.log(req.params);
 		
-		// We can choose to disable verification until we get env variables figured out
-		//return res.send(401, 'Unauthorized')
+		// We can choose to disable verification until we get env variables figured 
+		// out return res.send(401, 'Unauthorized')
   } else {
 		console.log("verification succ");
 		console.log(req.params);
@@ -59,11 +89,30 @@ server.post('/', restify.plugins.bodyParser({mapParams: true}), function (req, r
     message = "Sorry, I can't offer much help, just here to beep and boop"
   }
 
-	// I think will send a 200 OK response type
-  res.send({
-    response_type: 'in_channel',
-    text: message
-  })
+	// Immediately respond
+	res.send({
+		response_type: 'in_channel',
+		text: "Hmm, I'm thinking." 
+	});
+
+	console.log(req.params.response_url);
+	query_db("random query", function(rows) {
+		console.log('req started');
+
+		slack_data = {'text': 'Hello!'}
+		response = request.post({
+			uri: req.params.response_url,
+			headers: {'Content-Type': 'application/json'},
+			body: slack_data,
+			json: true,
+		});
+		console.log(response);
+		console.log('req finished');
+		//res.send({
+			//response_type: 'in_channel',
+			//text: "stuff" 
+		//});
+	});
 })
 // Add a GET handler for `/beepboop` route that Slack expects to be present
 server.get('/beepboop', function (req, res) {
@@ -82,4 +131,5 @@ server.listen(PORT, function (err) {
   }
 
   console.log('Server successfully started on port %s', PORT)
-})
+});
+
