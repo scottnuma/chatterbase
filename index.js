@@ -21,13 +21,17 @@ function query_db(query, callback) {
 	let db = new sqlite3.Database(databaseFile, sqlite3.OPEN_READONLY, (err) => {
 		if (err) {
 			console.error(err.message);
+			callback("Error opening database", null);
 		}
 	});
 
 	db.all(query, [], callback);
 
 	db.close((err) => {
-		if (err) { console.error(err.message); }
+		if (err) { 
+			console.error(err.message); 
+			callback("Error closing database", null);
+		}
 	});
 }
 
